@@ -24,7 +24,7 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.android.vending.expansion.downloader.R;
+import com.google.android.vending.expansion.downloader.R;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
