@@ -16,18 +16,17 @@
 
 package com.google.android.vending.expansion.downloader.impl;
 
-import com.google.android.vending.expansion.downloader.R;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.os.Messenger;
+import android.support.v4.app.NotificationCompat;
+
 import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
 import com.google.android.vending.expansion.downloader.DownloaderClientMarshaller;
 import com.google.android.vending.expansion.downloader.Helpers;
 import com.google.android.vending.expansion.downloader.IDownloaderClient;
-
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.os.Build;
-import android.os.Messenger;
-import android.support.v4.app.NotificationCompat;
+import com.google.android.vending.expansion.downloader.R;
 
 /**
  * This class handles displaying the notification associated with the download
@@ -198,7 +197,7 @@ public class DownloadNotification implements IDownloaderClient {
      * @param ctx The context to use to obtain access to the Notification
      *            Service
      */
-    DownloadNotification(Context ctx, CharSequence applicationLabel) {
+    DownloadNotification(Context ctx, CharSequence applicationLabel, String channelId) {
         mState = -1;
         mContext = ctx;
         mLabel = applicationLabel;
@@ -211,9 +210,11 @@ public class DownloadNotification implements IDownloaderClient {
         // lived background task.
         mActiveDownloadBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
         mActiveDownloadBuilder.setCategory(NotificationCompat.CATEGORY_PROGRESS);
+        mActiveDownloadBuilder.setChannelId(channelId);
 
         mBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
         mBuilder.setCategory(NotificationCompat.CATEGORY_PROGRESS);
+        mBuilder.setChannelId(channelId);
 
         mCurrentBuilder = mBuilder;
     }

@@ -16,20 +16,9 @@
 
 package com.google.android.vending.expansion.downloader.impl;
 
-import com.google.android.vending.expansion.downloader.Constants;
-import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
-import com.google.android.vending.expansion.downloader.DownloaderServiceMarshaller;
-import com.google.android.vending.expansion.downloader.Helpers;
-import com.google.android.vending.expansion.downloader.IDownloaderClient;
-import com.google.android.vending.expansion.downloader.IDownloaderService;
-import com.google.android.vending.expansion.downloader.IStub;
-import com.google.android.vending.licensing.AESObfuscator;
-import com.google.android.vending.licensing.APKExpansionPolicy;
-import com.google.android.vending.licensing.LicenseChecker;
-import com.google.android.vending.licensing.LicenseCheckerCallback;
-import com.google.android.vending.licensing.Policy;
-
 import android.app.AlarmManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -42,6 +31,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Messenger;
@@ -49,6 +39,19 @@ import android.os.SystemClock;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+
+import com.google.android.vending.expansion.downloader.Constants;
+import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
+import com.google.android.vending.expansion.downloader.DownloaderServiceMarshaller;
+import com.google.android.vending.expansion.downloader.Helpers;
+import com.google.android.vending.expansion.downloader.IDownloaderClient;
+import com.google.android.vending.expansion.downloader.IDownloaderService;
+import com.google.android.vending.expansion.downloader.IStub;
+import com.google.android.vending.licensing.AESObfuscator;
+import com.google.android.vending.licensing.APKExpansionPolicy;
+import com.google.android.vending.licensing.LicenseChecker;
+import com.google.android.vending.licensing.LicenseCheckerCallback;
+import com.google.android.vending.licensing.Policy;
 
 import java.io.File;
 
@@ -496,10 +499,10 @@ public abstract class DownloaderService extends CustomIntentService implements I
                         break;
                     case TelephonyManager.NETWORK_TYPE_LTE: // 4G
                     case TelephonyManager.NETWORK_TYPE_EHRPD: // 3G ++ interop
-                                                              // with 4G
+                        // with 4G
                     case TelephonyManager.NETWORK_TYPE_HSPAP: // 3G ++ but
-                                                              // marketed as
-                                                              // 4G
+                        // marketed as
+                        // 4G
                         mIsAtLeast3G = true;
                         mIsAtLeast4G = true;
                         break;
@@ -622,7 +625,7 @@ public abstract class DownloaderService extends CustomIntentService implements I
     }
 
     public static int startDownloadServiceIfRequired(Context context,
-            Intent intent, Class<?> serviceClass) throws NameNotFoundException {
+                                                     Intent intent, Class<?> serviceClass) throws NameNotFoundException {
         final PendingIntent pendingIntent = (PendingIntent) intent
                 .getParcelableExtra(EXTRA_PENDING_INTENT);
         return startDownloadServiceIfRequired(context, pendingIntent,
@@ -630,9 +633,8 @@ public abstract class DownloaderService extends CustomIntentService implements I
     }
 
     public static int startDownloadServiceIfRequired(Context context,
-            PendingIntent pendingIntent, Class<?> serviceClass)
-            throws NameNotFoundException
-    {
+                                                     PendingIntent pendingIntent, Class<?> serviceClass)
+            throws NameNotFoundException {
         String packageName = context.getPackageName();
         String className = serviceClass.getName();
 
@@ -656,11 +658,11 @@ public abstract class DownloaderService extends CustomIntentService implements I
      * @param context
      * @param pendingIntent
      * @return true if the app should wait for more guidance from the
-     *         downloader, false if the app can continue
+     * downloader, false if the app can continue
      * @throws NameNotFoundException
      */
     public static int startDownloadServiceIfRequired(Context context,
-            PendingIntent pendingIntent, String classPackage, String className)
+                                                     PendingIntent pendingIntent, String classPackage, String className)
             throws NameNotFoundException {
         // first: do we need to do an LVL update?
         // we begin by getting our APK version from the package manager
@@ -737,6 +739,10 @@ public abstract class DownloaderService extends CustomIntentService implements I
     public abstract byte[] getSALT();
 
     public abstract String getAlarmReceiverClassName();
+
+    public abstract String getNotificationChannelId();
+
+    public abstract String getNotificationChannelName();
 
     private class LVLRunnable implements Runnable {
         LVLRunnable(Context context, PendingIntent intent) {
@@ -861,8 +867,7 @@ public abstract class DownloaderService extends CustomIntentService implements I
 
                 @Override
                 public void dontAllow(int reason) {
-                    try
-                    {
+                    try {
                         switch (reason) {
                             case Policy.NOT_LICENSED:
                                 mNotification
@@ -893,7 +898,9 @@ public abstract class DownloaderService extends CustomIntentService implements I
 
         }
 
-    };
+    }
+
+    ;
 
     /**
      * Updates the LVL information from the server.
@@ -913,13 +920,13 @@ public abstract class DownloaderService extends CustomIntentService implements I
      * have the same name, we download it if it hasn't already been delivered by
      * Market.
      *
-     * @param index the index of the file from market (0 = main, 1 = patch)
+     * @param index    the index of the file from market (0 = main, 1 = patch)
      * @param filename the name of the new file
      * @param fileSize the size of the new file
      * @return
      */
     public boolean handleFileUpdated(DownloadsDB db, int index,
-            String filename, long fileSize) {
+                                     String filename, long fileSize) {
         DownloadInfo di = db.getDownloadInfoByFileName(filename);
         if (null != di) {
             String oldFile = di.mFileName;
@@ -960,7 +967,7 @@ public abstract class DownloaderService extends CustomIntentService implements I
         alarms.set(
                 AlarmManager.RTC_WAKEUP,
                 System.currentTimeMillis() + wakeUp, mAlarmIntent
-                );
+        );
     }
 
     private void cancelAlarms() {
@@ -998,7 +1005,9 @@ public abstract class DownloaderService extends CustomIntentService implements I
                 context.startService(fileIntent);
             }
         }
-    };
+    }
+
+    ;
 
     /**
      * This is the main thread for the Downloader. This thread is responsible
@@ -1011,11 +1020,9 @@ public abstract class DownloaderService extends CustomIntentService implements I
             // the database automatically reads the metadata for version code
             // and download status when the instance is created
             DownloadsDB db = DownloadsDB.getDB(this);
-            final PendingIntent pendingIntent = (PendingIntent) intent
-                    .getParcelableExtra(EXTRA_PENDING_INTENT);
+            final PendingIntent pendingIntent = intent.getParcelableExtra(EXTRA_PENDING_INTENT);
 
-            if (null != pendingIntent)
-            {
+            if (null != pendingIntent) {
                 mNotification.setClientIntent(pendingIntent);
                 mPendingIntent = pendingIntent;
             } else if (null != mPendingIntent) {
@@ -1181,6 +1188,22 @@ public abstract class DownloaderService extends CustomIntentService implements I
         return NETWORK_NO_CONNECTION;
     }
 
+    private void initializeNotificationChannel() {
+        // Create a default notification channel for Oreo devices and up
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel = new NotificationChannel(
+                    getNotificationChannelId(),
+                    getNotificationChannelName(),
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            notificationChannel.setShowBadge(true);
+            NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(notificationChannel);
+            }
+        }
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -1189,8 +1212,8 @@ public abstract class DownloaderService extends CustomIntentService implements I
                     getPackageName(), 0);
             ApplicationInfo ai = getApplicationInfo();
             CharSequence applicationLabel = getPackageManager().getApplicationLabel(ai);
-            mNotification = new DownloadNotification(this, applicationLabel);
-
+            initializeNotificationChannel();
+            mNotification = new DownloadNotification(this, applicationLabel, getNotificationChannelId());
         } catch (NameNotFoundException e) {
             e.printStackTrace();
         }
@@ -1249,7 +1272,7 @@ public abstract class DownloaderService extends CustomIntentService implements I
 
     /**
      * @return a non-localized string appropriate for logging corresponding to
-     *         one of the NETWORK_* constants.
+     * one of the NETWORK_* constants.
      */
     public String getLogMessageForNetworkError(int networkError) {
         switch (networkError) {
@@ -1312,7 +1335,7 @@ public abstract class DownloaderService extends CustomIntentService implements I
                         totalBytesSoFar,
                         timeRemaining,
                         mAverageDownloadSpeed)
-                );
+        );
 
     }
 
