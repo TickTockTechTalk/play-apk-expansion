@@ -701,7 +701,11 @@ public abstract class DownloaderService extends CustomIntentService implements I
                 Intent fileIntent = new Intent();
                 fileIntent.setClassName(classPackage, className);
                 fileIntent.putExtra(EXTRA_PENDING_INTENT, pendingIntent);
-                context.startService(fileIntent);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(fileIntent);
+                } else {
+                    context.startService(fileIntent);
+                }
                 break;
         }
         return status;
@@ -1214,6 +1218,9 @@ public abstract class DownloaderService extends CustomIntentService implements I
             CharSequence applicationLabel = getPackageManager().getApplicationLabel(ai);
             initializeNotificationChannel();
             mNotification = new DownloadNotification(this, applicationLabel, getNotificationChannelId());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForeground(1, mNotification.getNotification());
+            }
         } catch (NameNotFoundException e) {
             e.printStackTrace();
         }

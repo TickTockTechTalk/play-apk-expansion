@@ -16,6 +16,7 @@
 
 package com.google.android.vending.expansion.downloader.impl;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -217,6 +218,13 @@ public class DownloadNotification implements IDownloaderClient {
         mBuilder.setChannelId(channelId);
 
         mCurrentBuilder = mBuilder;
+    }
+
+    public Notification getNotification() {
+        if (mCurrentBuilder == null) {
+            return null;
+        }
+        return mCurrentBuilder.build();
     }
 
     @Override
