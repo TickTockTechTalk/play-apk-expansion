@@ -1219,7 +1219,7 @@ public abstract class DownloaderService extends CustomIntentService implements I
             initializeNotificationChannel();
             mNotification = new DownloadNotification(this, applicationLabel, getNotificationChannelId());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForeground(1, mNotification.getNotification());
+                startForeground(DownloadNotification.NOTIFICATION_ID, mNotification.getNotification());
             }
         } catch (NameNotFoundException e) {
             e.printStackTrace();
