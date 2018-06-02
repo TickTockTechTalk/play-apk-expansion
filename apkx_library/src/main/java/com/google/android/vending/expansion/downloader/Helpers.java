@@ -24,8 +24,6 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.google.android.vending.expansion.downloader.R;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -42,7 +40,9 @@ public class Helpers {
 
     public static Random sRandom = new Random(SystemClock.uptimeMillis());
 
-    /** Regex used to parse content-disposition headers */
+    /**
+     * Regex used to parse content-disposition headers
+     */
     private static final Pattern CONTENT_DISPOSITION_PATTERN = Pattern
             .compile("attachment;\\s*filename\\s*=\\s*\"([^\"]*)\"");
 
@@ -112,7 +112,7 @@ public class Helpers {
      */
     public static boolean isFilenameValid(String filename) {
         filename = filename.replaceFirst("/+", "/"); // normalize leading
-                                                     // slashes
+        // slashes
         return filename.startsWith(Environment.getDownloadCacheDirectory().toString())
                 || filename.startsWith(Environment.getExternalStorageDirectory().toString());
     }
@@ -120,7 +120,8 @@ public class Helpers {
     /*
      * Delete the given file from device
      */
-    /* package */static void deleteFile(String path) {
+    /* package */
+    static void deleteFile(String path) {
         try {
             File file = new File(path);
             file.delete();
@@ -162,7 +163,7 @@ public class Helpers {
      * @return
      */
     static public String getDownloadProgressStringNotification(long overallProgress,
-            long overallTotal) {
+                                                               long overallTotal) {
         if (overallTotal == 0) {
             if (Constants.LOGVV) {
                 Log.e(Constants.TAG, "Notification called when total is zero");
@@ -200,8 +201,8 @@ public class Helpers {
     /**
      * Returns the file name (without full path) for an Expansion APK file from the given context.
      *
-     * @param c the context
-     * @param mainFile true for main file, false for patch file
+     * @param c           the context
+     * @param mainFile    true for main file, false for patch file
      * @param versionCode the version of the file
      * @return String the file name of the expansion file
      */
@@ -235,14 +236,14 @@ public class Helpers {
     /**
      * Helper function to ascertain the existence of a file and return true/false appropriately
      *
-     * @param c the app/activity/service context
-     * @param fileName the name (sans path) of the file to query
-     * @param fileSize the size that the file must match
+     * @param c                    the app/activity/service context
+     * @param fileName             the name (sans path) of the file to query
+     * @param fileSize             the size that the file must match
      * @param deleteFileOnMismatch if the file sizes do not match, delete the file
      * @return true if it does exist, false otherwise
      */
     static public boolean doesFileExist(Context c, String fileName, long fileSize,
-            boolean deleteFileOnMismatch) {
+                                        boolean deleteFileOnMismatch) {
         // the file may have been delivered by Play --- let's make sure
         // it's the size we expect
         File fileForNewFile = new File(Helpers.generateSaveFileName(c, fileName));
@@ -266,7 +267,7 @@ public class Helpers {
     /**
      * Helper function to ascertain whether a file can be read.
      *
-     * @param c the app/activity/service context
+     * @param c        the app/activity/service context
      * @param fileName the name (sans path) of the file to query
      * @return true if it does exist, false otherwise
      */
@@ -290,7 +291,7 @@ public class Helpers {
     /**
      * Helper function to ascertain whether the application has the correct access to the OBB
      * directory to allow an OBB file to be written.
-     * 
+     *
      * @param c the app/activity/service context
      * @return true if the application can write an OBB file, false otherwise
      */
@@ -310,7 +311,7 @@ public class Helpers {
      * Converts download states that are returned by the
      * {@link IDownloaderClient#onDownloadStateChanged} callback into usable strings. This is useful
      * if using the state strings built into the library to display user messages.
-     * 
+     *
      * @param state One of the STATE_* constants from {@link IDownloaderClient}.
      * @return string resource ID for the corresponding string.
      */
@@ -352,6 +353,8 @@ public class Helpers {
                 return R.string.state_failed_sdcard_full;
             case IDownloaderClient.STATE_FAILED_CANCELED:
                 return R.string.state_failed_cancelled;
+            case IDownloaderClient.STATE_FAILED:
+                return R.string.state_failed;
             default:
                 return R.string.state_unknown;
         }
