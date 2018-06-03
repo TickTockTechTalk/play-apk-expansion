@@ -17,8 +17,6 @@
 package com.google.android.vending.expansion.downloader.impl;
 
 import android.app.AlarmManager;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -744,10 +742,6 @@ public abstract class DownloaderService extends CustomIntentService implements I
 
     public abstract String getAlarmReceiverClassName();
 
-    public abstract String getNotificationChannelId();
-
-    public abstract String getNotificationChannelName();
-
     private class LVLRunnable implements Runnable {
         LVLRunnable(Context context, PendingIntent intent) {
             mContext = context;
@@ -1192,38 +1186,27 @@ public abstract class DownloaderService extends CustomIntentService implements I
         return NETWORK_NO_CONNECTION;
     }
 
-    private void initializeNotificationChannel() {
-        // Create a default notification channel for Oreo devices and up
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel notificationChannel = new NotificationChannel(
-                    getNotificationChannelId(),
-                    getNotificationChannelName(),
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            notificationChannel.setShowBadge(true);
-            NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(notificationChannel);
-            }
-        }
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();
         try {
-            mPackageInfo = getPackageManager().getPackageInfo(
-                    getPackageName(), 0);
+            mPackageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
             ApplicationInfo ai = getApplicationInfo();
             CharSequence applicationLabel = getPackageManager().getApplicationLabel(ai);
-            initializeNotificationChannel();
-            mNotification = new DownloadNotification(this, applicationLabel, getNotificationChannelId());
+            mNotification = makeDownloadNotification(applicationLabel);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForeground(DownloadNotification.NOTIFICATION_ID, mNotification.getNotification());
             }
         } catch (NameNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Override to customize DownloadNotification
+     */
+    protected DownloadNotification makeDownloadNotification(CharSequence applicationLabel) {
+        return new DownloadNotification(this, applicationLabel);
     }
 
     /**

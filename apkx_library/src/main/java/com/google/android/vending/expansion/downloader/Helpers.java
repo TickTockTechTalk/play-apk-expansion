@@ -155,6 +155,11 @@ public class Helpers {
                 + "MB";
     }
 
+    static public String getDownloadSizeLeftString(long bytesLeft) {
+        float MBLeft = (float) bytesLeft / (1024.0f * 1024.0f);
+        return String.format(Locale.US, "%.1fMB left", MBLeft);
+    }
+
     /**
      * Adds a percentile to getDownloadProgressString.
      *

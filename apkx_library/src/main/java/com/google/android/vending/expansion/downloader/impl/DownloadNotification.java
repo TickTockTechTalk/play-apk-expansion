@@ -17,9 +17,11 @@
 package com.google.android.vending.expansion.downloader.impl;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.os.Build;
 import android.os.Messenger;
 import android.support.v4.app.NotificationCompat;
 
@@ -42,14 +44,18 @@ import com.google.android.vending.expansion.downloader.R;
  */
 public class DownloadNotification implements IDownloaderClient {
 
+    public static final String DEFAULT_CHANNEL_ID = "Downloads";
+
     private int mState;
     private final Context mContext;
     private final NotificationManager mNotificationManager;
     private CharSequence mCurrentTitle;
 
     private IDownloaderClient mClientProxy;
+
     private NotificationCompat.Builder mActiveDownloadBuilder;
-    private NotificationCompat.Builder mBuilder;
+
+    private NotificationCompat.Builder mIdleBuilder;
     private NotificationCompat.Builder mCurrentBuilder;
     private CharSequence mLabel;
     private String mCurrentText;
@@ -64,7 +70,7 @@ public class DownloadNotification implements IDownloaderClient {
     }
 
     public void setClientIntent(PendingIntent clientIntent) {
-        this.mBuilder.setContentIntent(clientIntent);
+        this.mIdleBuilder.setContentIntent(clientIntent);
         this.mActiveDownloadBuilder.setContentIntent(clientIntent);
         this.mContentIntent = clientIntent;
     }
@@ -158,14 +164,15 @@ public class DownloadNotification implements IDownloaderClient {
         }
         if (progress.mOverallTotal <= 0) {
             // we just show the text
-            mBuilder.setTicker(mCurrentTitle);
-            mBuilder.setSmallIcon(android.R.drawable.stat_sys_download);
-            mBuilder.setContentTitle(mCurrentTitle);
-            mBuilder.setContentText(mCurrentText);
-            mCurrentBuilder = mBuilder;
+            mIdleBuilder.setTicker(mCurrentTitle);
+            mIdleBuilder.setSmallIcon(android.R.drawable.stat_sys_download);
+            mIdleBuilder.setContentTitle(mCurrentTitle);
+            mIdleBuilder.setContentText(mCurrentText);
+            mCurrentBuilder = mIdleBuilder;
         } else {
             mActiveDownloadBuilder.setProgress((int) progress.mOverallTotal, (int) progress.mOverallProgress, false);
-            mActiveDownloadBuilder.setContentText(Helpers.getDownloadProgressString(progress.mOverallProgress, progress.mOverallTotal));
+            // mActiveDownloadBuilder.setContentText(Helpers.getDownloadProgressString(progress.mOverallProgress, progress.mOverallTotal));
+            mActiveDownloadBuilder.setContentText(Helpers.getDownloadSizeLeftString(progress.mOverallTotal - progress.mOverallProgress));
             mActiveDownloadBuilder.setSmallIcon(android.R.drawable.stat_sys_download);
             mActiveDownloadBuilder.setTicker(mLabel + ": " + mCurrentText);
             mActiveDownloadBuilder.setContentTitle(mLabel);
@@ -173,6 +180,7 @@ public class DownloadNotification implements IDownloaderClient {
                     Helpers.getTimeRemaining(progress.mTimeRemaining)));
             mCurrentBuilder = mActiveDownloadBuilder;
         }
+
         mNotificationManager.notify(NOTIFICATION_ID, mCurrentBuilder.build());
     }
 
@@ -195,29 +203,64 @@ public class DownloadNotification implements IDownloaderClient {
     /**
      * Constructor
      *
-     * @param ctx The context to use to obtain access to the Notification
-     *            Service
+     * @param context The context to use to obtain access to the Notification
+     *                Service
      */
-    DownloadNotification(Context ctx, CharSequence applicationLabel, String channelId) {
-        mState = -1;
-        mContext = ctx;
-        mLabel = applicationLabel;
-        mNotificationManager = (NotificationManager)
-                mContext.getSystemService(Context.NOTIFICATION_SERVICE);
-        mActiveDownloadBuilder = new NotificationCompat.Builder(ctx);
-        mBuilder = new NotificationCompat.Builder(ctx);
+    public DownloadNotification(Context context, CharSequence applicationLabel) {
+        this(context, applicationLabel, DEFAULT_CHANNEL_ID, DEFAULT_CHANNEL_ID);
+    }
 
+    public DownloadNotification(Context context, CharSequence applicationLabel, String channelId, CharSequence channelName) {
+        mState = -1;
+        mContext = context;
+        mLabel = applicationLabel;
+        mNotificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        initializeNotificationChannel(context, mNotificationManager, channelId, channelName);
+        mActiveDownloadBuilder = new NotificationCompat.Builder(context, channelId);
+        mIdleBuilder = new NotificationCompat.Builder(context, channelId);
+        setDefaultProperties(mActiveDownloadBuilder, mIdleBuilder);
+
+        mCurrentBuilder = mIdleBuilder;
+    }
+
+    private void initializeNotificationChannel(Context context, NotificationManager manager, String id, CharSequence name) {
+        // Create a default notification channel for Oreo devices and up
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (manager.getNotificationChannel(id) != null) {
+                manager.getNotificationChannel(id).setName(name);
+                return;
+            }
+
+            NotificationChannel notificationChannel = new NotificationChannel(
+                    id,
+                    name,
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            notificationChannel.setShowBadge(true);
+            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(notificationChannel);
+            }
+        }
+    }
+
+    private void setDefaultProperties(NotificationCompat.Builder... builders) {
         // Set Notification category and priorities to something that makes sense for a long
         // lived background task.
-        mActiveDownloadBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
-        mActiveDownloadBuilder.setCategory(NotificationCompat.CATEGORY_PROGRESS);
-        mActiveDownloadBuilder.setChannelId(channelId);
+        for (NotificationCompat.Builder builder : builders) {
+            builder.setPriority(NotificationCompat.PRIORITY_LOW);
+            builder.setCategory(NotificationCompat.CATEGORY_PROGRESS);
+            builder.setShowWhen(false);
+        }
+    }
 
-        mBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
-        mBuilder.setCategory(NotificationCompat.CATEGORY_PROGRESS);
-        mBuilder.setChannelId(channelId);
+    protected NotificationCompat.Builder getActiveDownloadBuilder() {
+        return mActiveDownloadBuilder;
+    }
 
-        mCurrentBuilder = mBuilder;
+    public NotificationCompat.Builder getIdleBuilder() {
+        return mIdleBuilder;
     }
 
     public Notification getNotification() {
